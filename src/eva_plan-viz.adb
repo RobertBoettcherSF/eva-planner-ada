@@ -311,12 +311,16 @@ package body Eva_Plan.Viz is
          Clamped := 0.999;
       end if;
       Leg_F := Clamped * 4.0;
-      Leg := Integer (Leg_F);  --  truncate toward 0; Leg_F >= 0
-      if Leg < 0 then
-         Leg := 0;
-      elsif Leg > 3 then
-         Leg := 3;
-      end if;
+      --  Floor without Float'Floor (WASM has no that runtime symbol).
+      --  Integer (Float) rounds to nearest, which jumped legs at halfway
+      --  and drew the walkers off the map.
+      Leg := 0;
+      for Candidate in reverse 0 .. 3 loop
+         if Leg_F >= Float (Candidate) then
+            Leg := Candidate;
+            exit;
+         end if;
+      end loop;
       Frac := Leg_F - Float (Leg);
       A := Waypoints (Leg);
       B := Waypoints (Leg + 1);

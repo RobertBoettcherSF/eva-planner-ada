@@ -8,7 +8,7 @@ with System;
 
 package Eva_Plan.Api is
 
-   Version_String : constant String := "0.2.0";
+   Version_String : constant String := "0.2.1";
 
    procedure Init
      with Export, Convention => C, External_Name => "eva_init";

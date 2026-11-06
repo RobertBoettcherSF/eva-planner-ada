@@ -12,10 +12,10 @@ mission data.
 
 ## Try the page
 
-Version **0.2.0**. Open the splash (title and two walkers on the path) and the
+Version **0.2.1**. Open the splash (title and two walkers on the path) and the
 console (map, timeline, coverage, and walkback) here:
 
-[https://raw.githack.com/RobertBoettcherSF/eva-planner-ada/main/dist/index.html?v=2](https://raw.githack.com/RobertBoettcherSF/eva-planner-ada/main/dist/index.html?v=2)
+[https://raw.githack.com/RobertBoettcherSF/eva-planner-ada/main/dist/index.html?v=3](https://raw.githack.com/RobertBoettcherSF/eva-planner-ada/main/dist/index.html?v=2)
 
 JavaScript draws frames and lays out the console tables. The map and walkers
 run in Ada compiled to WebAssembly. Table numbers are the same ones the native

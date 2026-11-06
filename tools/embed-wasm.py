@@ -17,5 +17,5 @@ if len(tables) != 3:
     raise SystemExit("expected 3 console tables from eva_plan_driver")
 tmpl = tmpl.replace("__CONSOLE_JSON__", json.dumps(tables).replace("</", "<\\/"))
 (root / "dist/index.html").write_text(tmpl.replace("__WASM_BASE64__", b64))
-(root / "dist/VERSION").write_text("0.2.0\n")
+(root / "dist/VERSION").write_text("0.2.1\n")
 print("wrote dist/index.html", (root / "dist/index.html").stat().st_size, "wasm", len(wasm))
