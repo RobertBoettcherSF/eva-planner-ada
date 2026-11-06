@@ -1,0 +1,28 @@
+--  EVA Planner Ada — native Linux build
+project Eva_Plan is
+
+   for Source_Dirs use ("src");
+   for Object_Dir  use "obj";
+   for Exec_Dir    use "bin";
+   for Main        use ("eva_plan_driver.adb", "eva_plan_viz_preview.adb");
+
+   package Builder is
+      for Default_Switches ("Ada") use ("-g");
+   end Builder;
+
+   package Compiler is
+      for Default_Switches ("Ada") use
+        ("-gnata",
+         "-gnatwa",
+         "-gnat12");
+   end Compiler;
+
+   package Binder is
+      for Default_Switches ("Ada") use ("-g");
+   end Binder;
+
+   package Prove is
+      for Proof_Switches ("Ada") use ("--level=2", "--timeout=30", "--report=all");
+   end Prove;
+
+end Eva_Plan;

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>EVA Planner Ada</title>
+<style>
+  :root { --bg:#0b1020; --ink:#e8eefc; --muted:#9aa7c7; --accent:#6ec8e8; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.45 system-ui,sans-serif; background:var(--bg); color:var(--ink); }
+  header { display:flex; gap:12px; align-items:center; padding:10px 14px; background:#0008; border-bottom:1px solid #223; }
+  header .ver { margin-left:auto; opacity:.7; font-variant-numeric:tabular-nums; }
+  #splash { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:16px; min-height: calc(100vh - 48px); }
+  #splashTitle { margin:0; font-size:clamp(28px,5vw,48px); font-weight:650; letter-spacing:.02em; }
+  #viz { width:min(1100px,96vw); height:auto; image-rendering:auto; background:#000; border:1px solid #223; border-radius:8px; }
+  .hint { color:var(--muted); max-width:40rem; text-align:center; }
+  .note { color:var(--muted); font-size:12px; }
+  #console { max-width:1200px; margin:0 auto; padding:16px; }
+  #console h2 { margin:8px 0 12px; }
+  .grid { display:grid; grid-template-columns: minmax(0,640px) minmax(0,1fr); gap:16px; align-items:start; }
+  @media (max-width:1000px){ .grid { grid-template-columns:1fr; } }
+  #vizC { width:100%; height:auto; background:#000; border:1px solid #223; border-radius:8px; }
+  .tbl { background:#0e1530; border:1px solid #223; border-radius:8px; padding:10px 12px; margin:0 0 12px; overflow-x:auto; }
+  .tbl h3 { margin:0 0 6px; font-size:14px; color:var(--accent); }
+  .tbl pre { margin:0; font:12.5px/1.4 ui-monospace,Menlo,Consolas,monospace; }
+  .miss { color:#ff9a7a; } .ok { color:#9be39b; } .over { color:#ff6a6a; font-weight:600; }
+</style>
+</head>
+<body>
+<header>
+  <strong>EVA Planner Ada</strong>
+  <span>Splash · Console</span>
+  <span class="ver">v<span id="verStamp">…</span></span>
+</header>
+<section id="splash">
+  <h1 id="splashTitle">EVA Planner Ada</h1>
+  <canvas id="viz" width="640" height="400"></canvas>
+  <p class="hint">Two walkers on an invented south-pole-like traverse. Ada draws every frame.</p>
+  <p class="note">Independent analogue — not a NASA product. Demonstration data only.</p>
+</section>
+<section id="console">
+  <h2>Console</h2>
+  <div class="grid">
+    <div><canvas id="vizC" width="640" height="400"></canvas>
+      <p class="note">Same Ada-drawn map and walkers. Tables below are printed by the native Ada driver (Timeline, Science, Model, Terrain) at build time.</p></div>
+    <div id="tables"></div>
+  </div>
+</section>
+<script>
+"use strict";
+const VERSION = "0.2.0";
+const WASM_B64 = "__WASM_BASE64__";
+const CONSOLE = __CONSOLE_JSON__;
+(function renderTables(){
+  const host = document.getElementById("tables");
+  for (const t of CONSOLE) {
+    const lines = t.split("\n");
+    const box = document.createElement("div"); box.className = "tbl";
+    const h = document.createElement("h3"); h.textContent = lines[0]; box.appendChild(h);
+    const pre = document.createElement("pre");
+    for (const ln of lines.slice(1)) {
+      const span = document.createElement("span");
+      if (/ Missed$/.test(ln)) span.className = "miss";
+      else if (/ OVER$/.test(ln)) span.className = "over";
+      else if (/ (OK|Covered)$/.test(ln)) span.className = "ok";
+      span.textContent = ln + "\n"; pre.appendChild(span);
+    }
+    box.appendChild(pre); host.appendChild(box);
+  }
+})();
+const params = new URLSearchParams(location.search);
+const pageV = params.get("v") || "1";
+
+let ada, raf = 0, lastBlit = 0;
+const viz = document.getElementById("viz");
+const ctx = viz.getContext("2d");
+const ctxC = document.getElementById("vizC").getContext("2d");
+
+function verFromAda() {
+  const n = ada.eva_version_len();
+  let s = "";
+  for (let i = 1; i <= n; i++) s += String.fromCharCode(ada.eva_version_byte(i));
+  return s;
+}
+function blit() {
+  ada.eva_viz_tick();
+  const w = ada.eva_viz_width(), h = ada.eva_viz_height();
+  if (viz.width !== w || viz.height !== h) { viz.width = w; viz.height = h; }
+  const img = new ImageData(new Uint8ClampedArray(ada.memory.buffer, ada.eva_viz_frame(), w * h * 4), w, h);
+  ctx.putImageData(img, 0, 0);
+  ctxC.putImageData(img, 0, 0);
+}
+function loop(ts) {
+  raf = requestAnimationFrame(loop);
+  if (ts - lastBlit > 40) { blit(); lastBlit = ts; }
+}
+
+WebAssembly.instantiate(Uint8Array.from(atob(WASM_B64), c => c.charCodeAt(0))).then(r => {
+  ada = r.instance.exports;
+  ada.eva_init();
+  const stamp = verFromAda();
+  document.getElementById("verStamp").textContent = stamp + (pageV ? " · p" + pageV : "");
+  if (stamp !== VERSION) console.error("version mismatch", stamp, VERSION);
+  ada.eva_viz_start((Math.random() * 2**32) >>> 0);
+  requestAnimationFrame(loop);
+}).catch(err => {
+  document.body.innerHTML = "<pre style='padding:20px;color:#f88'>Failed to load Ada WASM.\n" + err + "</pre>";
+});
+</script>
+</body>
+</html>
